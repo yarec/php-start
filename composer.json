@@ -1,0 +1,30 @@
+{
+    "require-dev": {
+        "phpunit/phpunit": "5.0.*"
+    },
+    "require": {
+        "slim/slim"            : "~3.3",
+        "slim/twig-view"       : "~2.1",
+        "league/oauth2-client" : "1.1.0",
+        "league/oauth2-server" : "4.1.5",
+        "catfan/medoo"         : "~1.0",
+        "symfony/class-loader" : "2.8.1",
+        "symfony/config"       : "3.0.1",
+        "sokil/php-mongo"      : "dev-master",
+        "vlucas/valitron"      : "1.2.4",
+        "predis/predis"        : "1.1.1",
+        "webonyx/graphql-php"  : "0.6.4",
+        "pavlakis/slim-cli"    : "^1.0",
+        "crysalead/dir"        : "^2.0",
+        "rosio/encrypted-cookie" : "1.0.0",
+        "overtrue/wechat"      : "~3.0",
+        "pingplusplus/pingpp-php": "dev-master",
+        "nikic/php-parser": "^2.1"
+    },
+    "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://packagist.phpcomposer.com"
+        }
+    }
+}

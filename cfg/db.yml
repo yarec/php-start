@@ -1,0 +1,17 @@
+dev :
+    database_type : mysql
+    database_name : myapp_dev
+    server        : 127.0.0.1
+    username      : root
+    password      :
+    charset       : utf8
+    debug_mode    :
+
+docker_db :
+    database_type : mysql
+    database_name : myapp_dev
+    server        : 127.0.0.1
+    username      : root
+    password      :
+    charset       : utf8
+    debug_mode    :

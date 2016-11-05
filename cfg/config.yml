@@ -1,0 +1,22 @@
+
+app:
+    mode: normal
+    cache_path: templates
+
+name:
+    myapp_dev
+
+logdir:
+    ./logs
+
+auth:
+    public:
+        - /token
+        - /pub
+        - /reset
+        - /login
+    user:
+        - /user
+        - /rest
+    admin:
+        - /admin
