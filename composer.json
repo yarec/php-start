@@ -10,7 +10,6 @@
         "catfan/medoo"         : "~1.0",
         "symfony/class-loader" : "2.8.1",
         "symfony/config"       : "3.0.1",
-        "sokil/php-mongo"      : "dev-master",
         "vlucas/valitron"      : "1.2.4",
         "predis/predis"        : "1.1.1",
         "webonyx/graphql-php"  : "0.6.4",
