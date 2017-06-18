@@ -1196,6 +1196,7 @@ $bw .= " and t1.{$bj}={$bk}";
 }
 } else {
 }
+info("{$bg} {$bj} {$em}");
 }
 return $bw;
 }
@@ -1408,12 +1409,18 @@ $dp = $by[0];
 $dp = null;
 }
 if ($dp) {
+if (array_key_exists('uid', $dp)) {
 $fu = $dp['uid'];
 if ($bg == \ctx::user_tbl()) {
 $fu = $dp['id'];
 }
 if ($fu != $aq && (!\ctx::isAdmin() || !\ctx::isAdminRest())) {
 ret(311, 'owner error');
+}
+} else {
+if (!\ctx::isAdmin()) {
+ret(311, 'owner error');
+}
 }
 } else {
 ret(312, 'not found error');
@@ -1771,11 +1778,53 @@ function encrypt_cookie($il)
 {
 return encrypt($il->getData(), $il->getExpiration());
 }
-
-function object2array(&$im)
+define('UC_KEY', 'iHuiPaoiwoeurqoejjdfklasdjfqowiefiqwjflkjdfsdfa');
+function _authcode($im, $in = 'DECODE', $k = '', $io = 0)
 {
-$im = json_decode(json_encode($im), true);
-return $im;
+$ip = 4;
+$k = md5($k ? $k : UC_KEY);
+$iq = md5(substr($k, 0, 16));
+$ir = md5(substr($k, 16, 16));
+$is = $ip ? $in == 'DECODE' ? substr($im, 0, $ip) : substr(md5(microtime()), -$ip) : '';
+$it = $iq . md5($iq . $is);
+$iu = strlen($it);
+$im = $in == 'DECODE' ? base64_decode(substr($im, $ip)) : sprintf('%010d', $io ? $io + time() : 0) . substr(md5($im . $ir), 0, 16) . $im;
+$iv = strlen($im);
+$iw = '';
+$ix = range(0, 255);
+$iy = array();
+for ($cw = 0; $cw <= 255; $cw++) {
+$iy[$cw] = ord($it[$cw % $iu]);
+}
+for ($iz = $cw = 0; $cw < 256; $cw++) {
+$iz = ($iz + $ix[$cw] + $iy[$cw]) % 256;
+$jk = $ix[$cw];
+$ix[$cw] = $ix[$iz];
+$ix[$iz] = $jk;
+}
+for ($jl = $iz = $cw = 0; $cw < $iv; $cw++) {
+$jl = ($jl + 1) % 256;
+$iz = ($iz + $ix[$jl]) % 256;
+$jk = $ix[$jl];
+$ix[$jl] = $ix[$iz];
+$ix[$iz] = $jk;
+$iw .= chr(ord($im[$cw]) ^ $ix[($ix[$jl] + $ix[$iz]) % 256]);
+}
+if ($in == 'DECODE') {
+if ((substr($iw, 0, 10) == 0 || substr($iw, 0, 10) - time() > 0) && substr($iw, 10, 16) == substr(md5(substr($iw, 26) . $ir), 0, 16)) {
+return substr($iw, 26);
+} else {
+return '';
+}
+} else {
+return $is . str_replace('=', '', base64_encode($iw));
+}
+}
+
+function object2array(&$jm)
+{
+$jm = json_decode(json_encode($jm), true);
+return $jm;
 }
 function getKeyValues($t, $k, $bs = null)
 {
@@ -1784,7 +1833,7 @@ $bs = function ($bk) {
 return $bk;
 };
 }
-$in = array();
+$jn = array();
 if ($t && is_array($t)) {
 foreach ($t as $dp) {
 if (isset($dp[$k]) && $dp[$k]) {
@@ -1792,35 +1841,35 @@ $cs = $dp[$k];
 if ($bs) {
 $cs = $bs($cs);
 }
-$in[] = $cs;
+$jn[] = $cs;
 }
 }
 }
-return array_unique($in);
+return array_unique($jn);
 }
 if (!function_exists('indexArray')) {
 function indexArray($t, $k)
 {
-$in = array();
+$jn = array();
 if ($t && is_array($t)) {
 foreach ($t as $dp) {
 if (!isset($dp[$k]) || !$dp[$k] || !is_scalar($dp[$k])) {
 continue;
 }
-$in[$dp[$k]] = $dp;
+$jn[$dp[$k]] = $dp;
 }
 }
-return $in;
+return $jn;
 }
 }
 if (!function_exists('groupArray')) {
-function groupArray($io, $k)
+function groupArray($jo, $k)
 {
-if (!is_array($io) || !$io) {
+if (!is_array($jo) || !$jo) {
 return array();
 }
 $t = array();
-foreach ($io as $dp) {
+foreach ($jo as $dp) {
 if (isset($dp[$k]) && $dp[$k]) {
 $t[$dp[$k]][] = $dp;
 }
@@ -1850,10 +1899,10 @@ $bw[$bj] = $dp;
 }
 return $bw;
 }
-function copyKey($t, $ip, $iq)
+function copyKey($t, $jp, $jq)
 {
 foreach ($t as &$dp) {
-$dp[$iq] = $dp[$ip];
+$dp[$jq] = $dp[$jp];
 }
 return $t;
 }
@@ -1864,96 +1913,96 @@ $dp[$k] = $cs;
 }
 return $t;
 }
-function dissoc($io, $co)
+function dissoc($jo, $co)
 {
 if (is_array($co)) {
 foreach ($co as $k) {
-unset($io[$k]);
+unset($jo[$k]);
 }
 } else {
-unset($io[$co]);
+unset($jo[$co]);
 }
-return $io;
+return $jo;
 }
-function getArg($ir, $is, $it = '')
+function getArg($jr, $js, $jt = '')
 {
-if (isset($ir[$is])) {
-return $ir[$is];
+if (isset($jr[$js])) {
+return $jr[$js];
 } else {
-return $it;
+return $jt;
 }
 }
 function permu($am, $ck = ',')
 {
 $ab = [];
 if (is_string($am)) {
-$iu = str_split($am);
+$ju = str_split($am);
 } else {
-$iu = $am;
+$ju = $am;
 }
-sort($iu);
-$iv = count($iu) - 1;
-$iw = $iv;
+sort($ju);
+$jv = count($ju) - 1;
+$jw = $jv;
 $ah = 1;
-$dp = implode($ck, $iu);
+$dp = implode($ck, $ju);
 $ab[] = $dp;
 while (true) {
-$ix = $iw--;
-if ($iu[$iw] < $iu[$ix]) {
-$iy = $iv;
-while ($iu[$iw] > $iu[$iy]) {
-$iy--;
+$jx = $jw--;
+if ($ju[$jw] < $ju[$jx]) {
+$jy = $jv;
+while ($ju[$jw] > $ju[$jy]) {
+$jy--;
 }
 
-list($iu[$iw], $iu[$iy]) = array($iu[$iy], $iu[$iw]);
+list($ju[$jw], $ju[$jy]) = array($ju[$jy], $ju[$jw]);
 
-for ($cw = $iv; $cw > $ix; $cw--, $ix++) {
-list($iu[$cw], $iu[$ix]) = array($iu[$ix], $iu[$cw]);
+for ($cw = $jv; $cw > $jx; $cw--, $jx++) {
+list($ju[$cw], $ju[$jx]) = array($ju[$jx], $ju[$cw]);
 }
-$dp = implode($ck, $iu);
+$dp = implode($ck, $ju);
 $ab[] = $dp;
-$iw = $iv;
+$jw = $jv;
 $ah++;
 }
-if ($iw == 0) {
+if ($jw == 0) {
 break;
 }
 }
 return $ab;
 }
-function combin($in, $iz, $jk = ',')
+function combin($jn, $jz, $kl = ',')
 {
-$jl = array();
-if ($iz == 1) {
-return $in;
+$iw = array();
+if ($jz == 1) {
+return $jn;
 }
-if ($iz == count($in)) {
-$jl[] = implode($jk, $in);
-return $jl;
+if ($jz == count($jn)) {
+$iw[] = implode($kl, $jn);
+return $iw;
 }
-$jm = $in[0];
-unset($in[0]);
-$in = array_values($in);
-$jn = combin($in, $iz - 1, $jk);
-foreach ($jn as $jo) {
-$jo = $jm . $jk . $jo;
-$jl[] = $jo;
+$km = $jn[0];
+unset($jn[0]);
+$jn = array_values($jn);
+$kn = combin($jn, $jz - 1, $kl);
+foreach ($kn as $ko) {
+$ko = $km . $kl . $ko;
+$iw[] = $ko;
 }
-unset($jn);
-$jp = combin($in, $iz, $jk);
-foreach ($jp as $jo) {
-$jl[] = $jo;
+unset($kn);
+$kp = combin($jn, $jz, $kl);
+foreach ($kp as $ko) {
+$iw[] = $ko;
 }
-unset($jp);
-return $jl;
+unset($kp);
+return $iw;
 }
 function getExcelCol($bt)
 {
-$in = array(0 => 'Z', 1 => 'A', 2 => 'B', 3 => 'C', 4 => 'D', 5 => 'E', 6 => 'F', 7 => 'G', 8 => 'H', 9 => 'I', 10 => 'J', 11 => 'K', 12 => 'L', 13 => 'M', 14 => 'N', 15 => 'O', 16 => 'P', 17 => 'Q', 18 => 'R', 19 => 'S', 20 => 'T', 21 => 'U', 22 => 'V', 23 => 'W', 24 => 'X', 25 => 'Y', 26 => 'Z');
+$jn = array(0 => 'Z', 1 => 'A', 2 => 'B', 3 => 'C', 4 => 'D', 5 => 'E', 6 => 'F', 7 => 'G', 8 => 'H', 9 => 'I', 10 => 'J', 11 => 'K', 12 => 'L', 13 => 'M', 14 => 'N', 15 => 'O', 16 => 'P', 17 => 'Q', 18 => 'R', 19 => 'S', 20 => 'T', 21 => 'U', 22 => 'V', 23 => 'W', 24 => 'X', 25 => 'Y', 26 => 'Z');
 if ($bt == 0) {
 return '';
 }
-return getExcelCol((int) (($bt - 1) / 26)) . $in[$bt % 26];
+return getExcelCol((int) (($bt - 1) / 26)) . $jn[$bt % 26];
 }
 function getExcelPos($cm, $bt)
 {
@@ -1973,189 +2022,189 @@ echo $t;
 }
 exit;
 }
-function succ($in = array(), $jq = 'succ', $jr = 1)
+function succ($jn = array(), $kq = 'succ', $kr = 1)
 {
-$t = $in;
-$js = 0;
-$jt = 1;
+$t = $jn;
+$ks = 0;
+$kt = 1;
 $ah = 0;
-$bw = array($jq => $jr, 'errormsg' => '', 'errorfield' => '');
-if (isset($in['data'])) {
-$t = $in['data'];
+$bw = array($kq => $kr, 'errormsg' => '', 'errorfield' => '');
+if (isset($jn['data'])) {
+$t = $jn['data'];
 }
-if (isset($in['total_page'])) {
-$bw['total_page'] = $in['total_page'];
+if (isset($jn['total_page'])) {
+$bw['total_page'] = $jn['total_page'];
 }
-if (isset($in['cur_page'])) {
-$bw['cur_page'] = $in['cur_page'];
+if (isset($jn['cur_page'])) {
+$bw['cur_page'] = $jn['cur_page'];
 }
-if (isset($in['count'])) {
-$bw['count'] = $in['count'];
+if (isset($jn['count'])) {
+$bw['count'] = $jn['count'];
 }
-if (isset($in['res-name'])) {
-$bw['res-name'] = $in['res-name'];
+if (isset($jn['res-name'])) {
+$bw['res-name'] = $jn['res-name'];
 }
 $bw['data'] = $t;
 sendJSON($bw);
 }
-function fail($in = array(), $jq = 'succ', $ju = 0)
+function fail($jn = array(), $kq = 'succ', $ku = 0)
 {
 $k = $hv = '';
-if (count($in) > 0) {
-$co = array_keys($in);
+if (count($jn) > 0) {
+$co = array_keys($jn);
 $k = $co[0];
-$hv = $in[$k][0];
+$hv = $jn[$k][0];
 }
-$bw = array($jq => $ju, 'errormsg' => $hv, 'errorfield' => $k);
+$bw = array($kq => $ku, 'errormsg' => $hv, 'errorfield' => $k);
 sendJSON($bw);
 }
-function code($in = array(), $jv = 0)
+function code($jn = array(), $kv = 0)
 {
-if (is_string($jv)) {
+if (is_string($kv)) {
 }
-if ($jv == 0) {
-succ($in, 'code', 0);
+if ($kv == 0) {
+succ($jn, 'code', 0);
 } else {
-fail($in, 'code', $jv);
+fail($jn, 'code', $kv);
 }
 }
-function ret($in = array(), $jv = 0, $fq = '')
+function ret($jn = array(), $kv = 0, $fq = '')
 {
-$jw = $in;
-$jx = $jv;
-if (is_numeric($in) || is_string($in)) {
-$jx = $in;
-$jw = array();
-if (is_array($jv)) {
-$jw = $jv;
+$jl = $jn;
+$kw = $kv;
+if (is_numeric($jn) || is_string($jn)) {
+$kw = $jn;
+$jl = array();
+if (is_array($kv)) {
+$jl = $kv;
 } else {
-$jv = $jv === 0 ? '' : $jv;
-$jw = array($fq => array($jv));
+$kv = $kv === 0 ? '' : $kv;
+$jl = array($fq => array($kv));
 }
 }
-code($jw, $jx);
+code($jl, $kw);
 }
-function err($jy)
+function err($kx)
 {
-code($jy, 1);
+code($kx, 1);
 }
-function downloadExcel($jz, $kl)
+function downloadExcel($ky, $kz)
 {
 header("Content-Type: application/force-download");
 header("Content-Type: application/octet-stream");
 header("Content-Type: application/download");
-header('Content-Disposition:inline;filename="' . $kl . '.xls"');
+header('Content-Disposition:inline;filename="' . $kz . '.xls"');
 header("Content-Transfer-Encoding: binary");
 header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
 header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
 header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 header("Pragma: no-cache");
-$jz->save('php://output');
+$ky->save('php://output');
 }
 function cacert_file()
 {
 return ROOT_PATH . "/fn/cacert.pem";
 }
-function curl($km, $kn = 10, $ko = 30, $kp = '')
+function curl($lm, $ln = 10, $lo = 30, $lp = '')
 {
-$kq = curl_init($km);
-curl_setopt($kq, CURLOPT_RETURNTRANSFER, 1);
-curl_setopt($kq, CURLOPT_CONNECTTIMEOUT, $kn);
-curl_setopt($kq, CURLOPT_HEADER, 0);
-curl_setopt($kq, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.8) Gecko/20100202 Firefox/3.5.8 GTB7.0');
-curl_setopt($kq, CURLOPT_TIMEOUT, $ko);
+$lq = curl_init($lm);
+curl_setopt($lq, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($lq, CURLOPT_CONNECTTIMEOUT, $ln);
+curl_setopt($lq, CURLOPT_HEADER, 0);
+curl_setopt($lq, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.8) Gecko/20100202 Firefox/3.5.8 GTB7.0');
+curl_setopt($lq, CURLOPT_TIMEOUT, $lo);
 if (file_exists(cacert_file())) {
-curl_setopt($kq, CURLOPT_CAINFO, cacert_file());
+curl_setopt($lq, CURLOPT_CAINFO, cacert_file());
 }
-if ($kp) {
-if (is_array($kp)) {
-$kp = http_build_query($kp);
+if ($lp) {
+if (is_array($lp)) {
+$lp = http_build_query($lp);
 }
-curl_setopt($kq, CURLOPT_POST, 1);
-curl_setopt($kq, CURLOPT_POSTFIELDS, $kp);
+curl_setopt($lq, CURLOPT_POST, 1);
+curl_setopt($lq, CURLOPT_POSTFIELDS, $lp);
 }
-$jl = curl_exec($kq);
-if (curl_errno($kq)) {
+$iw = curl_exec($lq);
+if (curl_errno($lq)) {
 return '';
 }
-curl_close($kq);
-return $jl;
+curl_close($lq);
+return $iw;
 }
-function curl_header($km, $kn = 10, $ko = 30)
+function curl_header($lm, $ln = 10, $lo = 30)
 {
-$kq = curl_init($km);
-curl_setopt($kq, CURLOPT_RETURNTRANSFER, 1);
-curl_setopt($kq, CURLOPT_CONNECTTIMEOUT, $kn);
-curl_setopt($kq, CURLOPT_HEADER, 1);
-curl_setopt($kq, CURLOPT_NOBODY, 1);
-curl_setopt($kq, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.8) Gecko/20100202 Firefox/3.5.8 GTB7.0');
-curl_setopt($kq, CURLOPT_TIMEOUT, $ko);
+$lq = curl_init($lm);
+curl_setopt($lq, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($lq, CURLOPT_CONNECTTIMEOUT, $ln);
+curl_setopt($lq, CURLOPT_HEADER, 1);
+curl_setopt($lq, CURLOPT_NOBODY, 1);
+curl_setopt($lq, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.8) Gecko/20100202 Firefox/3.5.8 GTB7.0');
+curl_setopt($lq, CURLOPT_TIMEOUT, $lo);
 if (file_exists(cacert_file())) {
-curl_setopt($kq, CURLOPT_CAINFO, cacert_file());
+curl_setopt($lq, CURLOPT_CAINFO, cacert_file());
 }
-$jl = curl_exec($kq);
-if (curl_errno($kq)) {
+$iw = curl_exec($lq);
+if (curl_errno($lq)) {
 return '';
 }
-return $jl;
+return $iw;
 }
 
-function startWith($bi, $jo)
+function startWith($bi, $ko)
 {
-return strpos($bi, $jo) === 0;
+return strpos($bi, $ko) === 0;
 }
-function endWith($kr, $ks)
+function endWith($lr, $ls)
 {
-$kt = strlen($ks);
-if ($kt == 0) {
+$lt = strlen($ls);
+if ($lt == 0) {
 return true;
 }
-return substr($kr, -$kt) === $ks;
+return substr($lr, -$lt) === $ls;
 }
 function is_string_column($c)
 {
-if (startWith(strtolower($c), 'char') || startWith(strtolower($c), 'datetime')) {
+if (startWith(strtolower($c), 'char') || startWith(strtolower($c), 'varchar') || startWith(strtolower($c), 'datetime')) {
 return 2;
 } else {
 return 1;
 }
 }
-function getWhereStr($k, $t, $ku = false, $fq = '')
+function getWhereStr($k, $t, $lu = false, $fq = '')
 {
-$io = getKeyValues($t, $k);
-if (!$io) {
+$jo = getKeyValues($t, $k);
+if (!$jo) {
 return '';
 }
-if ($ku) {
-foreach ($io as $bj => $bk) {
-$io[$bj] = "'{$bk}'";
+if ($lu) {
+foreach ($jo as $bj => $bk) {
+$jo[$bj] = "'{$bk}'";
 }
 }
-$bi = implode(',', $io);
+$bi = implode(',', $jo);
 if ($fq) {
 $k = $fq;
 }
 return " {$k} in ({$bi})";
 }
-function get_top_domain($km)
+function get_top_domain($lm)
 {
 $dl = "/[\\w-]+\\.(com|net|org|gov|cc|biz|info|cn)(\\.(cn|hk))*/";
-preg_match($dl, $km, $kv);
-if (count($kv) > 0) {
-return $kv[0];
+preg_match($dl, $lm, $lv);
+if (count($lv) > 0) {
+return $lv[0];
 } else {
-$kw = parse_url($km);
-$kx = $kw["host"];
-if (!strcmp(long2ip(sprintf("%u", ip2long($kx))), $kx)) {
-return $kx;
+$lw = parse_url($lm);
+$lx = $lw["host"];
+if (!strcmp(long2ip(sprintf("%u", ip2long($lx))), $lx)) {
+return $lx;
 } else {
-$in = explode(".", $kx);
-$ah = count($in);
-$ky = array("com", "net", "org", "3322");
-if (in_array($in[$ah - 2], $ky)) {
-$dy = $in[$ah - 3] . "." . $in[$ah - 2] . "." . $in[$ah - 1];
+$jn = explode(".", $lx);
+$ah = count($jn);
+$ly = array("com", "net", "org", "3322");
+if (in_array($jn[$ah - 2], $ly)) {
+$dy = $jn[$ah - 3] . "." . $jn[$ah - 2] . "." . $jn[$ah - 1];
 } else {
-$dy = $in[$ah - 2] . "." . $in[$ah - 1];
+$dy = $jn[$ah - 2] . "." . $jn[$ah - 1];
 }
 return $dy;
 }
@@ -2163,44 +2212,44 @@ return $dy;
 }
 function genID($hp)
 {
-list($kz, $lm) = explode(" ", microtime());
-$ln = rand(0, 100);
-return $hp . $lm . substr($kz, 2, 6);
+list($lz, $mn) = explode(" ", microtime());
+$mo = rand(0, 100);
+return $hp . $mn . substr($lz, 2, 6);
 }
-function cguid($lo = false)
+function cguid($mp = false)
 {
 mt_srand((double) microtime() * 10000);
-$lp = md5(uniqid(rand(), true));
-return $lo ? strtoupper($lp) : $lp;
+$mq = md5(uniqid(rand(), true));
+return $mp ? strtoupper($mq) : $mq;
 }
 function guid()
 {
 if (function_exists('com_create_guid')) {
 return com_create_guid();
 } else {
-$lq = cguid();
-$lr = chr(45);
-$ls = chr(123) . substr($lq, 0, 8) . $lr . substr($lq, 8, 4) . $lr . substr($lq, 12, 4) . $lr . substr($lq, 16, 4) . $lr . substr($lq, 20, 12) . chr(125);
-return $ls;
+$mr = cguid();
+$ms = chr(45);
+$mt = chr(123) . substr($mr, 0, 8) . $ms . substr($mr, 8, 4) . $ms . substr($mr, 12, 4) . $ms . substr($mr, 16, 4) . $ms . substr($mr, 20, 12) . chr(125);
+return $mt;
 }
 }
 function randstr($gh = 6)
 {
 return substr(md5(rand()), 0, $gh);
 }
-function hashsalt($lt, $lu = '')
+function hashsalt($mu, $mv = '')
 {
-$lu = $lu ? $lu : randstr(10);
-$lv = md5(md5($lt) . $lu);
-return [$lv, $lu];
+$mv = $mv ? $mv : randstr(10);
+$mw = md5(md5($mu) . $mv);
+return [$mw, $mv];
 }
 function gen_letters($gh = 26)
 {
-$jo = '';
+$ko = '';
 for ($cw = 65; $cw < 65 + $gh; $cw++) {
-$jo .= strtolower(chr($cw));
+$ko .= strtolower(chr($cw));
 }
-return $jo;
+return $ko;
 }
 function gen_sign($ar, $ao = null)
 {
@@ -2215,62 +2264,62 @@ if (!is_array($ar)) {
 return null;
 }
 ksort($ar, SORT_STRING);
-$lw = '';
+$mx = '';
 foreach ($ar as $k => $cs) {
-$lw .= $k . (is_array($cs) ? assemble($cs) : $cs);
+$mx .= $k . (is_array($cs) ? assemble($cs) : $cs);
 }
-return $lw;
+return $mx;
 }
 function check_sign($ar, $ao = null)
 {
-$lw = getArg($ar, 'sign');
-$lx = getArg($ar, 'date');
-$ly = strtotime($lx);
-$lz = time();
-$mn = $lz - $ly;
-debug("check_sign : {$lz} - {$ly} = {$mn}");
-if (!$lx || $lz - $ly > 60) {
-debug("check_sign fail : {$lx} delta > 60");
+$mx = getArg($ar, 'sign');
+$my = getArg($ar, 'date');
+$mz = strtotime($my);
+$no = time();
+$np = $no - $mz;
+debug("check_sign : {$no} - {$mz} = {$np}");
+if (!$my || $no - $mz > 60) {
+debug("check_sign fail : {$my} delta > 60");
 return false;
 }
 unset($ar['sign']);
-$mo = gen_sign($ar, $ao);
-debug("{$lw} -- {$mo}");
-return $lw == $mo;
+$nq = gen_sign($ar, $ao);
+debug("{$mx} -- {$nq}");
+return $mx == $nq;
 }
 function getIP()
 {
 if (!empty($_SERVER["HTTP_X_FORWARDED_FOR"])) {
-$mp = $_SERVER["HTTP_X_FORWARDED_FOR"];
+$nr = $_SERVER["HTTP_X_FORWARDED_FOR"];
 } else {
 if (!empty($_SERVER["HTTP_CLIENT_IP"])) {
-$mp = $_SERVER["HTTP_CLIENT_IP"];
+$nr = $_SERVER["HTTP_CLIENT_IP"];
 } else {
 if (!empty($_SERVER["REMOTE_ADDR"])) {
-$mp = $_SERVER["REMOTE_ADDR"];
+$nr = $_SERVER["REMOTE_ADDR"];
 } else {
 if (getenv("HTTP_X_FORWARDED_FOR")) {
-$mp = getenv("HTTP_X_FORWARDED_FOR");
+$nr = getenv("HTTP_X_FORWARDED_FOR");
 } else {
 if (getenv("HTTP_CLIENT_IP")) {
-$mp = getenv("HTTP_CLIENT_IP");
+$nr = getenv("HTTP_CLIENT_IP");
 } else {
 if (getenv("REMOTE_ADDR")) {
-$mp = getenv("REMOTE_ADDR");
+$nr = getenv("REMOTE_ADDR");
 } else {
-$mp = "Unknown";
+$nr = "Unknown";
 }
 }
 }
 }
 }
 }
-return $mp;
+return $nr;
 }
 function getRIP()
 {
-$mp = $_SERVER["REMOTE_ADDR"];
-return $mp;
+$nr = $_SERVER["REMOTE_ADDR"];
+return $nr;
 }
 function env()
 {
@@ -2305,8 +2354,8 @@ if (isset($_SERVER['HTTP_VIA'])) {
 return stristr($_SERVER['HTTP_VIA'], "wap") ? true : false;
 }
 if (isset($_SERVER['HTTP_USER_AGENT'])) {
-$mq = array('nokia', 'sony', 'ericsson', 'mot', 'samsung', 'htc', 'sgh', 'lg', 'sharp', 'sie-', 'philips', 'panasonic', 'alcatel', 'lenovo', 'iphone', 'ipod', 'blackberry', 'meizu', 'android', 'netfront', 'symbian', 'ucweb', 'windowsce', 'palm', 'operamini', 'operamobi', 'openwave', 'nexusone', 'cldc', 'midp', 'wap', 'mobile');
-if (preg_match("/(" . implode('|', $mq) . ")/i", strtolower($_SERVER['HTTP_USER_AGENT']))) {
+$ns = array('nokia', 'sony', 'ericsson', 'mot', 'samsung', 'htc', 'sgh', 'lg', 'sharp', 'sie-', 'philips', 'panasonic', 'alcatel', 'lenovo', 'iphone', 'ipod', 'blackberry', 'meizu', 'android', 'netfront', 'symbian', 'ucweb', 'windowsce', 'palm', 'operamini', 'operamobi', 'openwave', 'nexusone', 'cldc', 'midp', 'wap', 'mobile');
+if (preg_match("/(" . implode('|', $ns) . ")/i", strtolower($_SERVER['HTTP_USER_AGENT']))) {
 return true;
 }
 }
@@ -2325,15 +2374,15 @@ eval("function {$bm}(){}");
 }
 }
 }
-function extractUserData($mr)
+function extractUserData($nt)
 {
-return ['githubLogin' => $mr['login'], 'githubName' => $mr['name'], 'githubId' => $mr['id'], 'repos_url' => $mr['repos_url'], 'avatar_url' => $mr['avatar_url'], '_intm' => date('Y-m-d H:i:s'), '_uptm' => date('Y-m-d H:i:s')];
+return ['githubLogin' => $nt['login'], 'githubName' => $nt['name'], 'githubId' => $nt['id'], 'repos_url' => $nt['repos_url'], 'avatar_url' => $nt['avatar_url'], '_intm' => date('Y-m-d H:i:s'), '_uptm' => date('Y-m-d H:i:s')];
 }
-function output_user($ad, $ms = false)
+function output_user($ad, $nu = false)
 {
 unset($ad['passwd']);
 unset($ad['salt']);
-if (!$ms) {
+if (!$nu) {
 unset($ad['token']);
 }
 unset($ad['access-token']);
@@ -2346,25 +2395,25 @@ return true;
 }
 return false;
 }
-function auto_reg_user($mt = 'username', $mu = 'password', $bp = 'user', $mv = 0)
+function auto_reg_user($nv = 'username', $nw = 'password', $bp = 'user', $nx = 0)
 {
-$mw = randstr(10);
-$lt = randstr(6);
-$t = ["{$mt}" => $mw, "{$mu}" => $lt, '_intm' => date('Y-m-d H:i:s'), '_uptm' => date('Y-m-d H:i:s')];
-if ($mv) {
-list($lt, $lu) = hashsalt($lt);
-$t[$mu] = $lt;
-$t['salt'] = $lu;
+$ny = randstr(10);
+$mu = randstr(6);
+$t = ["{$nv}" => $ny, "{$nw}" => $mu, '_intm' => date('Y-m-d H:i:s'), '_uptm' => date('Y-m-d H:i:s')];
+if ($nx) {
+list($mu, $mv) = hashsalt($mu);
+$t[$nw] = $mu;
+$t['salt'] = $mv;
 } else {
-$t[$mu] = md5($lt);
+$t[$nw] = md5($mu);
 }
 return db::save($bp, $t);
 }
 function refresh_token($bp, $aq, $dy = '')
 {
-$mx = cguid();
-$t = ['id' => $aq, 'token' => $mx];
-info("refresh_token: {$mx}");
+$nz = cguid();
+$t = ['id' => $aq, 'token' => $nz];
+info("refresh_token: {$nz}");
 info($t);
 $ad = db::save($bp, $t);
 if ($dy) {
@@ -2374,26 +2423,26 @@ setcookie("token", $ad['token'], time() + 3600 * 24 * 365, '/');
 }
 return $ad;
 }
-function user_login($app, $mt = 'username', $mu = 'password', $bp = 'user', $mv = 0)
+function user_login($app, $nv = 'username', $nw = 'password', $bp = 'user', $nx = 0)
 {
-$jx = $app->getContainer();
-$s = $jx->request;
+$kw = $app->getContainer();
+$s = $kw->request;
 $t = $s->getParams();
-$t = select_keys([$mt, $mu], $t);
-$mw = $t[$mt];
-$lt = $t[$mu];
-if (!$mw || !$lt) {
+$t = select_keys([$nv, $nw], $t);
+$ny = $t[$nv];
+$mu = $t[$nw];
+if (!$ny || !$mu) {
 return NULL;
 }
-$ad = \db::row($bp, ["{$mt}" => $mw]);
+$ad = \db::row($bp, ["{$nv}" => $ny]);
 if ($ad) {
-if ($mv) {
-$lu = $ad['salt'];
-list($lt, $lu) = hashsalt($lt, $lu);
+if ($nx) {
+$mv = $ad['salt'];
+list($mu, $mv) = hashsalt($mu, $mv);
 } else {
-$lt = md5($lt);
+$mu = md5($mu);
 }
-if ($lt == $ad[$mu]) {
+if ($mu == $ad[$nw]) {
 return refresh_token($bp, $ad['id']);
 }
 }
@@ -2402,20 +2451,20 @@ return NULL;
 function check_auth($app)
 {
 $s = req();
-$my = false;
-$mz = cfg::get('public_paths');
+$op = false;
+$oq = cfg::get('public_paths');
 $dh = $s->getUri()->getPath();
 if ($dh == '/') {
-$my = true;
+$op = true;
 } else {
-foreach ($mz as $be) {
+foreach ($oq as $be) {
 if (startWith($dh, $be)) {
-$my = true;
+$op = true;
 }
 }
 }
-info("check_auth: {$my} {$dh}");
-if (!$my) {
+info("check_auth: {$op} {$dh}");
+if (!$op) {
 if (is_weixin()) {
 $dz = $_SERVER['REQUEST_URI'];
 header('Location: /api/auth/wechat?_r=' . $dz);
@@ -2432,77 +2481,77 @@ function rms($bg, $q = 'rest')
 return \ctx::container()->ms->getRest($bg, $q);
 }
 use db\Rest as rest;
-function getMetaData($no, $np = array())
+function getMetaData($or, $os = array())
 {
 ctx::pagesize(50);
-$nq = rest::getList('sys_objects');
-$nr = $nq['data'];
-$ns = array_filter($nr, function ($bk) use($no) {
-return $bk['name'] == $no;
+$ot = rest::getList('sys_objects');
+$ou = $ot['data'];
+$ov = array_filter($ou, function ($bk) use($or) {
+return $bk['name'] == $or;
 });
-$ns = array_shift($ns);
-$nt = $ns['id'];
-ctx::gets('oid', $nt);
-$nu = rest::getList('sys_object_item');
-$nv = $nu['data'];
-$nw = ['Id'];
-$nx = [0.1];
+$ov = array_shift($ov);
+$ow = $ov['id'];
+ctx::gets('oid', $ow);
+$ox = rest::getList('sys_object_item');
+$oy = $ox['data'];
+$oz = ['Id'];
+$pq = [0.1];
 $cj = [['data' => 'id', 'renderer' => 'html', 'readOnly' => true]];
-foreach ($nv as $dp) {
+foreach ($oy as $dp) {
 $bg = $dp['name'];
-$ny = $dp['colname'] ? $dp['colname'] : $bg;
+$pr = $dp['colname'] ? $dp['colname'] : $bg;
 $c = $dp['type'];
-$it = $dp['default'];
-$nz = $dp['col_width'];
-$op = $dp['readonly'] ? ture : false;
-$nw[] = $bg;
-$nx[] = (double) $nz;
-if (in_array($ny, array_keys($np))) {
-$cj[] = $np[$ny];
+$jt = $dp['default'];
+$ps = $dp['col_width'];
+$pt = $dp['readonly'] ? ture : false;
+$oz[] = $bg;
+$pq[] = (double) $ps;
+if (in_array($pr, array_keys($os))) {
+$cj[] = $os[$pr];
 } else {
-$cj[] = ['data' => $ny, 'renderer' => 'html', 'readOnly' => $op];
+$cj[] = ['data' => $pr, 'renderer' => 'html', 'readOnly' => $pt];
 }
 }
-$nw[] = "InTm";
-$nw[] = "St";
-$nx[] = 60;
-$nx[] = 10;
+$oz[] = "InTm";
+$oz[] = "St";
+$pq[] = 60;
+$pq[] = 10;
 $cj[] = ['data' => "_intm", 'renderer' => "html", 'readOnly' => true];
 $cj[] = ['data' => "_st", 'renderer' => "html"];
-$oq = ['objname' => $no];
-return [$oq, $nw, $nx, $cj];
+$pu = ['objname' => $or];
+return [$pu, $oz, $pq, $cj];
 }
 $app = new \Slim\App();
 ctx::app($app);
-function tpl($bc, $or = '.html')
+function tpl($bc, $pv = '.html')
 {
-$bc = $bc . $or;
-$os = cfg::get('tpl_prefix');
-$ot = "{$os['pc']}/{$bc}";
-$ou = "{$os['mobile']}/{$bc}";
-info("tpl: {$ot} | {$ou}");
-return isMobile() ? $ou : $ot;
+$bc = $bc . $pv;
+$pw = cfg::get('tpl_prefix');
+$px = "{$pw['pc']}/{$bc}";
+$py = "{$pw['mobile']}/{$bc}";
+info("tpl: {$px} | {$py}");
+return isMobile() ? $py : $px;
 }
 function req()
 {
 return ctx::req();
 }
-function get($bg, $it = '')
+function get($bg, $jt = '')
 {
 $s = req();
-$cs = $s->getParam($bg, $it);
-if ($cs == $it) {
-$ov = ctx::gets();
-if (isset($ov[$bg])) {
-return $ov[$bg];
+$cs = $s->getParam($bg, $jt);
+if ($cs == $jt) {
+$pz = ctx::gets();
+if (isset($pz[$bg])) {
+return $pz[$bg];
 }
 }
 return $cs;
 }
-function post($bg, $it = '')
+function post($bg, $jt = '')
 {
 $s = req();
-return $s->getParam($bg, $it);
+return $s->getParam($bg, $jt);
 }
 function gets()
 {
@@ -2535,41 +2584,41 @@ $dh = '/' . $dh;
 }
 return $dh;
 }
-function host_str($jo)
+function host_str($ko)
 {
-$ow = '';
+$qr = '';
 if (isset($_SERVER['HTTP_HOST'])) {
-$ow = $_SERVER['HTTP_HOST'];
+$qr = $_SERVER['HTTP_HOST'];
 }
-return " [ {$ow} ] " . $jo;
+return " [ {$qr} ] " . $ko;
 }
-function debug($jo)
+function debug($ko)
 {
 if (ctx::logger()) {
-$jo = format_log_str($jo, getCallerStr(3));
-ctx::logger()->debug(host_str($jo));
+$ko = format_log_str($ko, getCallerStr(3));
+ctx::logger()->debug(host_str($ko));
 }
 }
-function warn($jo)
+function warn($ko)
 {
 if (ctx::logger()) {
-$jo = format_log_str($jo, getCallerStr(3));
-ctx::logger()->warn(host_str($jo));
+$ko = format_log_str($ko, getCallerStr(3));
+ctx::logger()->warn(host_str($ko));
 }
 }
-function info($jo)
+function info($ko)
 {
 if (ctx::logger()) {
-$jo = format_log_str($jo, getCallerStr(3));
-ctx::logger()->info(host_str($jo));
+$ko = format_log_str($ko, getCallerStr(3));
+ctx::logger()->info(host_str($ko));
 }
 }
-function format_log_str($jo, $ox = '')
+function format_log_str($ko, $qs = '')
 {
-if (is_array($jo)) {
-$jo = json_encode($jo);
+if (is_array($ko)) {
+$ko = json_encode($ko);
 }
-return "{$jo} [ ::{$ox} ]";
+return "{$ko} [ ::{$qs} ]";
 }
 function ck_owner($dp)
 {
@@ -2584,78 +2633,78 @@ return cfg::get($bg, 'error');
 }
 $__log_time__ = 0;
 $__log_begin_time__ = 0;
-function log_time($bi = '', $ly = 0)
+function log_time($bi = '', $mz = 0)
 {
 global $__log_time__, $__log_begin_time__;
-list($kz, $lm) = explode(" ", microtime());
-$oy = (double) $kz + (double) $lm;
+list($lz, $mn) = explode(" ", microtime());
+$qt = (double) $lz + (double) $mn;
 if (!$__log_time__) {
-$__log_begin_time__ = $oy;
-$__log_time__ = $oy;
+$__log_begin_time__ = $qt;
+$__log_time__ = $qt;
 $be = uripath();
 debug("usetime: --- {$be} ---");
-return $oy;
+return $qt;
 }
-if ($ly && $ly == 'begin') {
-$oz = $__log_begin_time__;
+if ($mz && $mz == 'begin') {
+$qu = $__log_begin_time__;
 } else {
-$oz = $ly ? $ly : $__log_time__;
+$qu = $mz ? $mz : $__log_time__;
 }
-$mn = $oy - $oz;
-$mn *= 1000;
-debug("usetime: ---  {$mn} {$bi}  ---");
-$__log_time__ = $oy;
-return $oy;
+$np = $qt - $qu;
+$np *= 1000;
+debug("usetime: ---  {$np} {$bi}  ---");
+$__log_time__ = $qt;
+return $qt;
 }
 use core\Service as ms;
-$pq = $app->getContainer();
-$pq['view'] = function ($jx) {
+$qv = $app->getContainer();
+$qv['view'] = function ($kw) {
 $bd = new \Slim\Views\Twig(ROOT_PATH . '/templates', ['cache' => false]);
-$bd->addExtension(new \Slim\Views\TwigExtension($jx['router'], $jx['request']->getUri()));
+$bd->addExtension(new \Slim\Views\TwigExtension($kw['router'], $kw['request']->getUri()));
 return $bd;
 };
-$pq['logger'] = function ($jx) {
+$qv['logger'] = function ($kw) {
 if (is_docker_env()) {
-$pr = '/ws/log/app.log';
+$qw = '/ws/log/app.log';
 } else {
-$ps = cfg::get('logdir');
-if ($ps) {
-$pr = $ps . '/app.log';
+$qx = cfg::get('logdir');
+if ($qx) {
+$qw = $qx . '/app.log';
 } else {
-$pr = __DIR__ . '/../app.log';
+$qw = __DIR__ . '/../app.log';
 }
 }
-$pt = ['name' => '', 'path' => $pr];
-$pu = new \Monolog\Logger($pt['name']);
-$pu->pushProcessor(new \Monolog\Processor\UidProcessor());
-$pv = \cfg::get('app');
-$ho = isset($pv['log_level']) ? $pv['log_level'] : '';
+$qy = ['name' => '', 'path' => $qw];
+$qz = new \Monolog\Logger($qy['name']);
+$qz->pushProcessor(new \Monolog\Processor\UidProcessor());
+$rs = \cfg::get('app');
+$ho = isset($rs['log_level']) ? $rs['log_level'] : '';
 if (!$ho) {
 $ho = \Monolog\Logger::INFO;
 }
-$pu->pushHandler(new \Monolog\Handler\StreamHandler($pt['path'], $ho));
-$pu->pushHandler(new \Monolog\Handler\ChromePHPHandler());
-return $pu;
+$qz->pushHandler(new \Monolog\Handler\StreamHandler($qy['path'], $ho));
+$qz->pushHandler(new \Monolog\Handler\ChromePHPHandler());
+return $qz;
 };
 log_time();
-$pq['errorHandler'] = function ($jx) {
-return function ($de, $df, $pw) use($jx) {
-info($pw);
-$px = 'Something went wrong!';
-return $jx['response']->withStatus(500)->withHeader('Content-Type', 'text/html')->write($px);
+$qv['errorHandler'] = function ($kw) {
+return function ($de, $df, $rt) use($kw) {
+info($rt);
+$ru = 'Something went wrong!';
+return $kw['response']->withStatus(500)->withHeader('Content-Type', 'text/html')->write($ru);
 };
 };
-$pq['notFoundHandler'] = function ($jx) {
+$qv['notFoundHandler'] = function ($kw) {
 if (!\ctx::isFoundRoute()) {
-return function ($de, $df) use($jx) {
-return $jx['response']->withStatus(404)->withHeader('Content-Type', 'text/html')->write('Page not found');
+return function ($de, $df) use($kw) {
+return $kw['response']->withStatus(404)->withHeader('Content-Type', 'text/html')->write('Page not found');
 };
 }
-return function ($de, $df) use($jx) {
-return $jx['response'];
+return function ($de, $df) use($kw) {
+return $kw['response'];
 };
 };
-$pq['ms'] = function ($jx) {
+$qv['ms'] = function ($kw) {
 ms::init();
 return new ms();
 };
@@ -2665,12 +2714,12 @@ return preg_match("/^1[3|4|5|7|8]\\d{9}\$/", $l) ? TRUE : FALSE;
 log_time("DEPS END");
 log_time("ROUTES BEGIN");
 use Lead\Dir\Dir as dir;
-$py = ROOT_PATH . '/routes';
-if (folder_exist($py)) {
-$pz = dir::scan($py, ['type' => 'file']);
-foreach ($pz as $qr) {
-if (basename($qr) != 'routes.php' && !endWith($qr, '.DS_Store')) {
-require_once $qr;
+$rv = ROOT_PATH . '/routes';
+if (folder_exist($rv)) {
+$rw = dir::scan($rv, ['type' => 'file']);
+foreach ($rw as $rx) {
+if (basename($rx) != 'routes.php' && !endWith($rx, '.DS_Store')) {
+require_once $rx;
 }
 }
 }
@@ -2684,12 +2733,12 @@ namespace {
 log_time("MID BEGIN");
 $app->add(new \mid\TwigMid());
 $app->add(new \mid\RestMid());
-$qs = \cfg::load('mid');
-if ($qs) {
-foreach ($qs as $bj => $m) {
-$qt = "\\{$bj}";
-debug("load mid: {$qt}");
-$app->add(new $qt());
+$ry = \cfg::load('mid');
+if ($ry) {
+foreach ($ry as $bj => $m) {
+$rz = "\\{$bj}";
+debug("load mid: {$rz}");
+$app->add(new $rz());
 }
 }
 if (file_exists(ROOT_PATH . DS . 'lib/mid/MyAuthMid.php')) {
