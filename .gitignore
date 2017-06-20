@@ -1,0 +1,8 @@
+vendor/
+composer.lock
+app.log
+npm-debug.log
+cfg/*.prod.yml
+cfg/*.dev.yml
+.DS_Store
+dist
