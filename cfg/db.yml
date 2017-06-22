@@ -1,10 +1,10 @@
 use_db: dev
 dev :
     database_type : mysql
-    database_name : myapp_dev
-    server        : 127.0.0.1
+    database_name : base_sys
+    server        : db
     username      : root
-    password      :
+    password      : 123456
     charset       : utf8
     debug_mode    :
 

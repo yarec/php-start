@@ -2730,15 +2730,192 @@ sendJSON(ctx::route_list());
 log_time("ROUTES ENG");
 }
 namespace {
+use db\Rest as rest;
+function def_hot_rest($app, $bg, $ry = array())
+{
+$app->options("/pub/{$bg}", function () {
+ret([]);
+});
+$app->options("/pub/{$bg}/{id}", function () {
+ret([]);
+});
+$app->get("/pub/{$bg}", function () use($ry, $bg) {
+$or = $ry['objname'];
+$rz = $bg;
+$by = rest::getList($rz);
+list($pu, $oz, $pq, $cj) = getMetaData($or);
+$pq[0] = 10;
+$bw['data'] = ['meta' => $pu, 'list' => $by['data'], 'colHeaders' => $oz, 'colWidths' => $pq, 'cols' => $cj];
+ret($bw);
+});
+$app->post("/pub/{$bg}", function () use($ry, $bg) {
+$rz = $bg;
+$by = rest::postData($rz);
+ret($by);
+});
+$app->put("/pub/{$bg}/{id}", function ($s, $ay, $jr) use($ry, $bg) {
+$rz = $bg;
+$by = rest::putData($rz, $jr['id']);
+ret($by);
+});
+}
+function getHotColMap()
+{
+$rz = 'bom_part_params';
+ctx::pagesize(50);
+$by = rest::getList($rz);
+$st = getKeyValues($by['data'], 'id');
+$ar = indexArray($by['data'], 'id');
+$su = db::all('bom_part_param_prop', ['AND' => ['part_param_id' => $st]]);
+$su = groupArray($su, 'id');
+$gt = db::all('bom_part_param_opt', ['AND' => ['param_id' => $st]]);
+$gt = groupArray($gt, 'param_prop_id');
+$os = [];
+foreach ($gt as $k => $sv) {
+$sw = '';
+$sx = 0;
+$sy = $su[$k];
+foreach ($sy as $bj => $sz) {
+if ($sz['name'] == 'value') {
+$sx = $sz['part_param_id'];
+}
+}
+$sw = $ar[$sx]['name'];
+if ($sx) {
+}
+if ($sw) {
+$os[$sw] = ['data' => $sw, 'type' => 'autocomplete', 'strict' => false, 'source' => getKeyValues($sv, 'option')];
+}
+}
+$t = ['rows' => $by, 'pids' => $st, 'props' => $su, 'opts' => $gt, 'cols_map' => $os];
+$os = [];
+return $os;
+}
+}
+namespace {
+use db\Rest as rest;
+use util\Pinyin;
+function def_hot_opt_rest($app, $bg, $ry = array())
+{
+$rz = $bg;
+$tu = "{$bg}_ext";
+$app->get("/pub/{$bg}", function () use($rz, $tu) {
+$fv = get('oid');
+$sx = get('pid');
+$br = "select * from `{$rz}` pp join `{$tu}` pv\n              on pp.id = pv.`pid`\n              where pp.oid={$fv} and pp.pid={$sx}";
+$by = db::query($br);
+$t = groupArray($by, 'name');
+$oz = ['Id', 'Oid', 'RowNum'];
+$pq = [5, 5, 5];
+$cj = [['data' => 'id', 'renderer' => 'html', 'readOnly' => true], ['data' => 'oid', 'renderer' => 'html', 'readOnly' => true], ['data' => '_rownum', 'renderer' => 'html', 'readOnly' => true]];
+$ab = [];
+foreach ($t as $bj => $bk) {
+$oz[] = $bk[0]['label'];
+$pq[] = $bk[0]['col_width'];
+$cj[] = ['data' => $bj, 'renderer' => 'html'];
+$tv = [];
+foreach ($bk as $k => $dp) {
+$ab[$dp['_rownum']][$bj] = $dp['option'];
+if ($bj == 'value') {
+if (!isset($ab[$dp['_rownum']]['id'])) {
+$ab[$dp['_rownum']]['id'] = $dp['id'];
+$ab[$dp['_rownum']]['oid'] = $fv;
+$ab[$dp['_rownum']]['_rownum'] = $dp['_rownum'];
+}
+}
+}
+}
+$ab = array_values($ab);
+$bw['data'] = ['list' => $ab, 'colHeaders' => $oz, 'colWidths' => $pq, 'cols' => $cj];
+ret($bw);
+});
+$app->get("/pub/{$bg}_addprop", function () use($rz, $tu) {
+$fv = get('oid');
+$sx = get('pid');
+$tw = get('propname');
+if ($tw != 'value' && !checkOptPropVal($fv, $sx, 'value', $rz, $tu)) {
+addOptProp($fv, $sx, 'value', $rz, $tu);
+}
+if (!checkOptPropVal($fv, $sx, $tw, $rz, $tu)) {
+addOptProp($fv, $sx, $tw, $rz, $tu);
+}
+ret([11]);
+});
+$app->options("/pub/{$bg}", function () {
+ret([]);
+});
+$app->options("/pub/{$bg}/{id}", function () {
+ret([]);
+});
+$app->post("/pub/{$bg}", function () use($rz, $tu) {
+$t = ctx::data();
+$sx = $t['pid'];
+$fv = $t['oid'];
+$tx = $t['_rownum'];
+$sz = db::row($rz, ['AND' => ['oid' => $fv, 'pid' => $sx, 'name' => 'value']]);
+if (!$sz) {
+addOptProp($fv, $sx, 'value', $rz, $tu);
+}
+$ty = $sz['id'];
+$tz = db::obj()->max($tu, '_rownum', ['pid' => $ty]);
+$t = ['oid' => $fv, 'pid' => $ty, '_rownum' => $tz + 1];
+db::save($tu, $t);
+$bw = ['oid' => $fv, '_rownum' => $tx, 'prop' => $sz, 'maxrow' => $tz];
+ret($bw);
+});
+$app->put("/pub/{$bg}/{id}", function ($s, $ay, $jr) use($tu, $rz) {
+$t = ctx::data();
+$sx = $t['pid'];
+$fv = $t['oid'];
+$tx = $t['_rownum'];
+$ao = $t['token'];
+$aq = $t['uid'];
+$dp = dissoc($t, ['oid', 'pid', '_rownum', '_uptm', 'uniqid', 'token', 'uid']);
+debug($dp);
+$k = key($dp);
+$cs = $dp[$k];
+$sz = db::row($rz, ['AND' => ['pid' => $sx, 'oid' => $fv, 'name' => $k]]);
+info("{$sx} {$fv} {$k}");
+$ty = $sz['id'];
+$uv = db::obj()->has($tu, ['AND' => ['pid' => $ty, '_rownum' => $tx]]);
+if ($uv) {
+debug("has cell ...");
+$br = "update {$tu} set `option`='{$cs}' where _rownum={$tx} and pid={$ty}";
+debug($br);
+db::exec($br);
+} else {
+debug("has no cell ...");
+$t = ['oid' => $fv, 'pid' => $ty, '_rownum' => $tx, 'option' => $cs];
+db::save($tu, $t);
+}
+$bw = ['item' => $dp, 'oid' => $fv, '_rownum' => $tx, 'key' => $k, 'val' => $cs, 'prop' => $sz, 'sql' => $br];
+ret($bw);
+});
+}
+function checkOptPropVal($fv, $sx, $bg, $rz, $tu)
+{
+return db::obj()->has($rz, ['AND' => ['name' => $bg, 'oid' => $fv, 'pid' => $sx]]);
+}
+function addOptProp($fv, $sx, $tw, $rz, $tu)
+{
+$bg = Pinyin::get($tw);
+$t = ['oid' => $fv, 'pid' => $sx, 'label' => $tw, 'name' => $bg];
+$sz = db::save($rz, $t);
+$t = ['_rownum' => 1, 'oid' => $fv, 'pid' => $sz['id']];
+db::save($tu, $t);
+return $sz;
+}
+}
+namespace {
 log_time("MID BEGIN");
 $app->add(new \mid\TwigMid());
 $app->add(new \mid\RestMid());
-$ry = \cfg::load('mid');
-if ($ry) {
-foreach ($ry as $bj => $m) {
-$rz = "\\{$bj}";
-debug("load mid: {$rz}");
-$app->add(new $rz());
+$uw = \cfg::load('mid');
+if ($uw) {
+foreach ($uw as $bj => $m) {
+$ux = "\\{$bj}";
+debug("load mid: {$ux}");
+$app->add(new $ux());
 }
 }
 if (file_exists(ROOT_PATH . DS . 'lib/mid/MyAuthMid.php')) {
